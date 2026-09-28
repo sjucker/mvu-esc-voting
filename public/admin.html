@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Voting-Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    main { max-width: 980px; margin: 0 auto; padding: 28px 16px 60px; display: grid; gap: 20px; }
+    header { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+    header h1 { font-size: 2rem; font-weight: 900; margin: 4px 0 0; }
+    .links { display: flex; gap: 8px; flex-wrap: wrap; }
+    h2 { font-size: 1.15rem; font-weight: 800; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+    .status-line { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .stat { font-size: 2.4rem; font-weight: 900; line-height: 1; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+    .meter { height: 10px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; min-width: 80px; }
+    .meter div { height: 100%; background: var(--grad); border-radius: inherit; transition: width .5s; }
+    .song-t { font-weight: 700; }
+    .song-a { font-size: .85rem; color: var(--muted); }
+    .row-btns { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+    .row-btns button { padding: 6px 10px; font-size: .85rem; }
+    tr.editing td { background: rgba(255,46,147,.1); }
+
+    .form { display: grid; grid-template-columns: 2fr 2fr 1.3fr auto; gap: 10px; align-items: end; margin-top: 14px; }
+    .settings { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: 10px; align-items: end; }
+    .empty { color: var(--muted); text-align: center; padding: 20px; }
+    #login { max-width: 380px; margin: 14vh auto 0; }
+    @media (max-width: 720px) {
+      .form, .settings { grid-template-columns: 1fr; }
+      .hide-sm { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <form class="card" id="login" hidden>
+    <div class="eyebrow">Musikverein Harmonie Urdorf</div>
+    <h1 style="font-weight:900">Voting-Admin</h1>
+    <label for="pw">Passwort</label>
+    <input type="password" id="pw" autocomplete="current-password" required>
+    <div class="actions"><button class="btn-primary" type="submit">Anmelden</button></div>
+  </form>
+
+  <main id="app" hidden>
+    <header>
+      <div>
+        <div class="eyebrow">Musikverein Harmonie Urdorf</div>
+        <h1 class="grad-text">Voting-Admin</h1>
+      </div>
+      <div class="links">
+        <a class="btn btn-small" href="/" target="_blank">Abstimm-Seite ↗</a>
+        <a class="btn btn-small" href="/leaderboard" target="_blank">Leaderboard ↗</a>
+        <button class="btn-small" id="logout">Abmelden</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Steuerung</h2>
+      <div class="status-line">
+        <span class="pill" id="status"></span>
+        <span class="muted"><span class="stat" id="total">0</span> abgegebene Stimmen</span>
+      </div>
+      <div class="actions">
+        <button id="toggle-voting"></button>
+        <button class="btn-primary" id="reveal">🏆 Gewinner auf Leaderboard enthüllen</button>
+        <button id="unreveal" hidden>Enthüllung zurücknehmen</button>
+        <button class="btn-danger" id="reset">Alle Stimmen löschen</button>
+      </div>
+      <p class="muted" style="margin:12px 0 0;font-size:.9rem">Ablauf: Songs erfassen → Voting öffnen → Voting schliessen → Gewinner enthüllen. Beim Enthüllen wird das Voting automatisch geschlossen.</p>
+    </section>
+
+    <section class="card">
+      <h2>Resultate <span class="muted" style="font-weight:500;font-size:.9rem">(nur hier sichtbar, bis zur Enthüllung)</span></h2>
+      <table>
+        <thead><tr><th>#</th><th>Song</th><th class="hide-sm" style="width:35%"></th><th style="text-align:right">Stimmen</th></tr></thead>
+        <tbody id="results"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Songs</h2>
+      <table>
+        <thead><tr><th>#</th><th>Song</th><th></th></tr></thead>
+        <tbody id="songs"></tbody>
+      </table>
+      <form class="form" id="song-form">
+        <div><label for="f-title">Titel *</label><input type="text" id="f-title" required maxlength="120" placeholder="z.B. Waterloo"></div>
+        <div><label for="f-artist">Interpret</label><input type="text" id="f-artist" maxlength="120" placeholder="z.B. ABBA"></div>
+        <div><label for="f-country">Land / Jahr</label><input type="text" id="f-country" maxlength="60" placeholder="z.B. 🇸🇪 Schweden 1974"></div>
+        <div class="actions" style="margin:0">
+          <button class="btn-primary" type="submit" id="f-submit">Hinzufügen</button>
+          <button type="button" id="f-cancel" hidden>Abbrechen</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Einstellungen</h2>
+      <form class="settings" id="settings-form">
+        <div><label for="s-title">Anlass</label><input type="text" id="s-title" maxlength="120"></div>
+        <div><label for="s-url">Öffentliche URL für den QR-Code <span style="font-weight:400">(leer = aktuelle Adresse)</span></label><input type="url" id="s-url" maxlength="300" placeholder="https://voting.mvurdorf.ch/"></div>
+        <div><button type="submit">Speichern</button></div>
+      </form>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="alert" hidden></div>
+
+  <script src="/common.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const KEY = 'mvu-esc-admin';
+    let key = sessionStorage.getItem(KEY) || '';
+    let state = null;
+    let editingId = null;
+    let settingsDirty = false;
+
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg; t.hidden = false;
+      clearTimeout(toast.timer); toast.timer = setTimeout(() => (t.hidden = true), 3500);
+    }
+
+    async function admin(path, opts = {}) {
+      try {
+        const data = await api('/api/admin/' + path, { ...opts, headers: { 'X-Admin-Key': key } });
+        state = data;
+        render();
+        return data;
+      } catch (err) {
+        if (err.status === 401) return logout(key ? 'Falsches Passwort' : '');
+        toast(err.message);
+        throw err;
+      }
+    }
+
+    function logout(msg) {
+      key = ''; sessionStorage.removeItem(KEY);
+      $('app').hidden = true; $('login').hidden = false; $('pw').focus();
+      if (msg) toast(msg);
+    }
+
+    $('login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      key = $('pw').value;
+      await admin('state').catch(() => {});
+      if (state && key) {
+        sessionStorage.setItem(KEY, key);
+        $('login').hidden = true; $('app').hidden = false;
+      }
+    });
+    $('logout').addEventListener('click', () => { state = null; logout(); });
+
+    function render() {
+      if (!state) return;
+      const status = $('status');
+      status.className = 'pill ' + (state.revealed ? 'revealed' : state.votingOpen ? 'open' : 'closed');
+      status.textContent = state.revealed ? 'Gewinner enthüllt' : state.votingOpen ? 'Voting offen' : 'Voting geschlossen';
+      $('total').textContent = state.totalVotes;
+      const tv = $('toggle-voting');
+      tv.textContent = state.votingOpen ? '⏸ Voting schliessen' : '▶ Voting öffnen';
+      tv.className = state.votingOpen ? '' : 'btn-primary';
+      tv.disabled = !state.songs.length;
+      $('reveal').hidden = state.revealed;
+      $('unreveal').hidden = !state.revealed;
+
+      // Results
+      const rows = [...state.results].sort((a, b) => b.votes - a.votes);
+      const max = rows[0]?.votes || 0;
+      $('results').innerHTML = rows.length ? rows.map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><div class="song-t">${esc(r.title)}</div><div class="song-a">${esc(songLine(r))}</div></td>
+          <td class="hide-sm"><div class="meter"><div style="width:${max ? (r.votes / max) * 100 : 0}%"></div></div></td>
+          <td class="num">${r.votes} <span class="muted">· ${state.totalVotes ? Math.round((r.votes / state.totalVotes) * 100) : 0}%</span></td>
+        </tr>`).join('') : '<tr><td colspan="4" class="empty">Noch keine Songs erfasst.</td></tr>';
+
+      // Songs
+      $('songs').innerHTML = state.songs.length ? state.songs.map((s, i) => `
+        <tr class="${s.id === editingId ? 'editing' : ''}">
+          <td>${i + 1}</td>
+          <td><div class="song-t">${esc(s.title)}</div><div class="song-a">${esc(songLine(s))}</div></td>
+          <td><div class="row-btns">
+            <button data-act="up" data-id="${esc(s.id)}" ${i === 0 ? 'disabled' : ''} aria-label="Nach oben">↑</button>
+            <button data-act="down" data-id="${esc(s.id)}" ${i === state.songs.length - 1 ? 'disabled' : ''} aria-label="Nach unten">↓</button>
+            <button data-act="edit" data-id="${esc(s.id)}">Bearbeiten</button>
+            <button data-act="del" data-id="${esc(s.id)}" class="btn-danger">Löschen</button>
+          </div></td>
+        </tr>`).join('') : '<tr><td colspan="3" class="empty">Noch keine Songs – unten hinzufügen.</td></tr>';
+
+      if (!settingsDirty) {
+        $('s-title').value = state.title;
+        $('s-url').value = state.publicUrl;
+      }
+    }
+
+    $('toggle-voting').addEventListener('click', () => admin('settings', { method: 'POST', body: { votingOpen: !state.votingOpen } }));
+    $('reveal').addEventListener('click', () => {
+      if (confirm('Gewinner jetzt auf dem Leaderboard enthüllen? Das Voting wird dabei geschlossen.')) {
+        admin('settings', { method: 'POST', body: { revealed: true } });
+      }
+    });
+    $('unreveal').addEventListener('click', () => admin('settings', { method: 'POST', body: { revealed: false } }));
+    $('reset').addEventListener('click', () => {
+      if (confirm(`Wirklich alle ${state.totalVotes} Stimmen löschen? Das kann nicht rückgängig gemacht werden.`)) {
+        admin('reset', { method: 'POST' }).then(() => toast('Alle Stimmen gelöscht.'));
+      }
+    });
+
+    function resetForm() {
+      editingId = null;
+      $('song-form').reset();
+      $('f-submit').textContent = 'Hinzufügen';
+      $('f-cancel').hidden = true;
+      render();
+    }
+
+    $('song-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = { title: $('f-title').value, artist: $('f-artist').value, country: $('f-country').value };
+      await (editingId
+        ? admin('songs/' + encodeURIComponent(editingId), { method: 'PUT', body })
+        : admin('songs', { method: 'POST', body }));
+      resetForm();
+      $('f-title').focus();
+    });
+    $('f-cancel').addEventListener('click', resetForm);
+
+    $('songs').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-act]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const song = state.songs.find((s) => s.id === id);
+      const path = 'songs/' + encodeURIComponent(id);
+      if (btn.dataset.act === 'up' || btn.dataset.act === 'down') {
+        admin(path + '/move', { method: 'POST', body: { dir: btn.dataset.act === 'up' ? -1 : 1 } });
+      } else if (btn.dataset.act === 'del') {
+        const votes = state.results.find((r) => r.id === id)?.votes || 0;
+        if (confirm(`«${song.title}» löschen?${votes ? ` Die ${votes} Stimme(n) für diesen Song gehen verloren.` : ''}`)) {
+          if (editingId === id) resetForm();
+          admin(path, { method: 'DELETE' });
+        }
+      } else if (btn.dataset.act === 'edit') {
+        editingId = id;
+        $('f-title').value = song.title;
+        $('f-artist').value = song.artist;
+        $('f-country').value = song.country;
+        $('f-submit').textContent = 'Speichern';
+        $('f-cancel').hidden = false;
+        render();
+        $('f-title').focus();
+      }
+    });
+
+    $('settings-form').addEventListener('input', () => (settingsDirty = true));
+    $('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      settingsDirty = false;
+      await admin('settings', { method: 'POST', body: { title: $('s-title').value, publicUrl: $('s-url').value } });
+      toast('Gespeichert.');
+    });
+
+    if (key) {
+      admin('state').then(() => { $('app').hidden = false; }).catch(() => {});
+    } else {
+      logout();
+    }
+    setInterval(() => { if (key && !$('app').hidden) admin('state').catch(() => {}); }, 2000);
+  </script>
+</body>
+</html>
