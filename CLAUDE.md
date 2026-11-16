@@ -48,7 +48,7 @@ Per-song counts must not reach the public before the reveal. `publicState()` ret
 
 ### One vote per browser
 
-The server issues an HttpOnly `voter` cookie (UUID) on the first vote and rejects a second vote with 409. The voting page additionally stores `{ songId, round }` in `localStorage` as a fallback for browsers that drop cookies. `state.round` is incremented by `/api/admin/reset`, which invalidates those `localStorage` entries so browsers can vote again after a rehearsal. Deleting a song also deletes its votes.
+The server issues an HttpOnly `voter` cookie (UUID) on the first vote; another `POST /api/vote` with that cookie overwrites the existing vote (changing a vote while voting is open), so each voter still counts once. The voting page additionally stores `{ songId, round }` in `localStorage` as a fallback for browsers that drop cookies; it only offers «Stimme ändern» when the server reports `myVote`, since a cookie-less re-vote would be counted as an additional vote. `state.round` is incremented by `/api/admin/reset`, which invalidates those `localStorage` entries so browsers can vote again after a rehearsal. Deleting a song also deletes its votes.
 
 ### Voting/reveal state machine
 

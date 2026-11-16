@@ -47,6 +47,8 @@
     .message .big { font-size: 3.5rem; line-height: 1; margin-bottom: 14px; }
     .message h2 { font-size: 1.6rem; font-weight: 900; }
     .chosen { margin: 18px 0 6px; font-size: 1.3rem; font-weight: 800; }
+    .change { margin-top: 20px; background: var(--surface-2); border: 1px solid var(--border); }
+    .cancel { display: block; margin: 18px auto 0; background: none; color: var(--muted); text-decoration: underline; }
     .pop { animation: pop .6s cubic-bezier(.2, 1.6, .4, 1); }
     @keyframes pop { from { transform: scale(.6); opacity: 0; } }
   </style>
@@ -76,6 +78,7 @@
     let selected = null;
     let renderedKey = '';
     let submitting = false;
+    let changing = false; // voter is picking a different song
 
     function localVote() {
       try { return JSON.parse(localStorage.getItem(VOTED_KEY)); } catch { return null; }
@@ -90,8 +93,8 @@
       clearTimeout(toast.timer); toast.timer = setTimeout(() => (t.hidden = true), 4000);
     }
 
-    function message(icon, title, text, extra = '') {
-      return `<div class="card message pop"><div class="big">${icon}</div><h2>${title}</h2>${extra}<p class="muted">${text}</p></div>`;
+    function message(icon, title, text, extra = '', after = '') {
+      return `<div class="card message pop"><div class="big">${icon}</div><h2>${title}</h2>${extra}<p class="muted">${text}</p>${after}</div>`;
     }
 
     function votedSong() {
@@ -105,13 +108,17 @@
     function render() {
       document.getElementById('event-title').textContent = state.title;
       const mine = votedSong();
+      // Changing needs the server to know this browser (cookie); with only the
+      // localStorage fallback a second vote would be counted in addition.
+      const canChange = Boolean(mine && state.myVote && state.votingOpen);
+      if (!canChange) changing = false;
       let mode;
       if (state.revealed) mode = 'revealed';
-      else if (mine) mode = 'voted';
+      else if (mine && !changing) mode = 'voted';
       else if (!state.songs.length || !state.votingOpen) mode = state.totalVotes > 0 ? 'closed' : 'waiting';
       else mode = 'open';
 
-      const key = mode + '|' + (mine?.id || '') + '|' + state.songs.map((s) => s.id + s.title + s.artist + s.country).join();
+      const key = mode + '|' + canChange + '|' + (mine?.id || '') + '|' + state.songs.map((s) => s.id + s.title + s.artist + s.country).join();
       if (key === renderedKey) return;
       renderedKey = key;
       bar.hidden = mode !== 'open';
@@ -125,32 +132,46 @@
       } else if (mode === 'voted') {
         view.innerHTML = message('🎉', 'Danke für deine Stimme!',
           'Die Auflösung gibt’s am Ende auf der Leinwand. Viel Spass beim Konzert!',
-          `<p class="muted" style="margin:14px 0 0">Du hast gestimmt für</p><div class="chosen grad-text">${esc(mine.title)}</div><div class="muted">${esc(songLine(mine))}</div>`);
+          `<p class="muted" style="margin:14px 0 0">Du hast gestimmt für</p><div class="chosen grad-text">${esc(mine.title)}</div><div class="muted">${esc(songLine(mine))}</div>`,
+          canChange ? '<button class="change" id="change">Stimme ändern</button>' : '');
       } else if (mode === 'revealed') {
         view.innerHTML = message('👀', 'Schau auf die Leinwand!',
           'Das Publikum hat entschieden – jetzt wird der Zugabe-Song enthüllt.');
       } else {
         if (selected && !state.songs.some((s) => s.id === selected)) selected = null;
         view.innerHTML = `
-          <p style="text-align:center;margin:0 0 16px">Welchen Song möchtest du als <strong>Zugabe</strong> nochmals hören? Du hast <strong>eine</strong> Stimme.</p>
+          <p style="text-align:center;margin:0 0 16px">Welchen Song möchtest du als <strong>Zugabe</strong> nochmals hören? ${changing
+            ? 'Du kannst deine Stimme ändern, solange das Voting offen ist.'
+            : 'Du hast <strong>eine</strong> Stimme.'}</p>
           <ul class="songs" role="radiogroup" aria-label="Songs">
             ${state.songs.map((s, i) => `
               <li><button class="song" role="radio" aria-checked="${s.id === selected}" data-id="${esc(s.id)}">
                 <span class="num">${i + 1}</span>
                 <span><span class="t">${esc(s.title)}</span><span class="a">${esc(songLine(s))}</span></span>
               </button></li>`).join('')}
-          </ul>`;
+          </ul>
+          ${changing ? '<button class="cancel" id="cancel">Abbrechen – Stimme behalten</button>' : ''}`;
         updateSubmit();
       }
     }
 
     function updateSubmit() {
       const song = state.songs.find((s) => s.id === selected);
-      submit.disabled = !song || submitting;
-      submit.textContent = song ? `Für «${song.title}» abstimmen` : 'Song auswählen';
+      const unchanged = changing && selected === state.myVote;
+      submit.disabled = !song || submitting || unchanged;
+      if (!song) submit.textContent = 'Song auswählen';
+      else if (unchanged) submit.textContent = 'Anderen Song auswählen';
+      else submit.textContent = changing ? `Stimme zu «${song.title}» ändern` : `Für «${song.title}» abstimmen`;
     }
 
     view.addEventListener('click', (e) => {
+      if (e.target.closest('#change, #cancel')) {
+        changing = Boolean(e.target.closest('#change'));
+        selected = changing ? state.myVote : null;
+        render();
+        if (changing) window.scrollTo(0, 0);
+        return;
+      }
       const btn = e.target.closest('.song');
       if (!btn) return;
       selected = btn.dataset.id;
@@ -164,9 +185,10 @@
       try {
         state = await api('/api/vote', { method: 'POST', body: { songId: selected } });
         rememberVote(selected);
+        changing = false;
+        selected = null;
       } catch (err) {
         toast(err.message);
-        if (err.status === 409) rememberVote(selected);
         await refresh();
       } finally {
         submitting = false;

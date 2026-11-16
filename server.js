@@ -27,7 +27,7 @@ function defaultState() {
     revealId: 0,
     round: 1, // bumped on reset so browsers forget their old vote
     songs: [], // { id, title, artist, country }
-    votes: {}, // voterId -> { songId, at }
+    votes: {}, // voterId -> { songId, at } (one per voter; re-voting overwrites)
   };
 }
 
@@ -188,9 +188,7 @@ async function handleApi(req, res, url) {
     const { songId } = await readJson(req);
     if (!state.votingOpen) throw new HttpError(403, 'Das Voting ist geschlossen.');
     findSong(songId);
-    if (voterId && state.votes[voterId]) {
-      throw new HttpError(409, 'Von diesem Gerät wurde bereits abgestimmt.');
-    }
+    // A known voter voting again replaces their vote, so it still counts only once.
     const id = voterId && /^[a-f0-9-]{36}$/.test(voterId) ? voterId : crypto.randomUUID();
     state.votes[id] = { songId, at: new Date().toISOString() };
     save();
