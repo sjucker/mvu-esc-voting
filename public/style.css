@@ -31,7 +31,7 @@ body {
     linear-gradient(180deg, var(--bg-2), var(--bg));
   background-attachment: fixed;
   color: var(--text);
-  font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Montserrat", "Noto Color Emoji", system-ui, -apple-system, "Segoe UI", sans-serif;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }

@@ -107,7 +107,8 @@ function adminState() {
 }
 
 function cleanText(value, max) {
-  return typeof value === 'string' ? value.trim().slice(0, max) : '';
+  // Array.from counts code points, so a cut never splits an emoji's surrogate pair.
+  return typeof value === 'string' ? Array.from(value.trim()).slice(0, max).join('') : '';
 }
 
 // ---------------------------------------------------------------- http helpers
