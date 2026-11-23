@@ -1,15 +1,15 @@
 :root {
   --bg: #0b0620;
   --bg-2: #160b3a;
-  --surface: rgba(255, 255, 255, 0.06);
-  --surface-2: rgba(255, 255, 255, 0.12);
-  --border: rgba(255, 255, 255, 0.14);
+  --surface: rgba(16, 8, 44, 0.62);
+  --surface-2: rgba(255, 255, 255, 0.14);
+  --border: rgba(255, 255, 255, 0.18);
   --text: #f6f2ff;
-  --muted: #b7acd6;
+  --muted: #c4b9e6;
   --pink: #ff2e93;
-  --violet: #8a3cff;
-  --cyan: #19d3ff;
-  --gold: #ffd35c;
+  --violet: #7a3cff;
+  --cyan: #2f8bff;
+  --gold: #ffd84a;
   --danger: #ff5a6e;
   --ok: #3ee6a0;
   --grad: linear-gradient(100deg, var(--pink), var(--violet) 55%, var(--cyan));
@@ -25,15 +25,32 @@ html, body { margin: 0; }
 
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(255, 46, 147, 0.22), transparent 60%),
-    radial-gradient(900px 600px at 110% 10%, rgba(25, 211, 255, 0.16), transparent 60%),
-    linear-gradient(180deg, var(--bg-2), var(--bg));
-  background-attachment: fixed;
+  background: var(--bg);
   color: var(--text);
   font-family: "Montserrat", "Noto Color Emoji", system-ui, -apple-system, "Segoe UI", sans-serif;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ESC stage photo behind everything. A fixed pseudo-element instead of
+   background-attachment: fixed, which iOS Safari does not support. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(11, 6, 32, .55), rgba(11, 6, 32, .78) 55%, rgba(11, 6, 32, .92)),
+    url("/background.jpg") center 30% / cover no-repeat,
+    var(--bg);
+}
+
+.logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+  filter: drop-shadow(0 0 24px rgba(255, 46, 147, .55)) drop-shadow(0 0 60px rgba(122, 60, 255, .45));
 }
 
 h1, h2, h3 { line-height: 1.15; margin: 0 0 .4em; }
@@ -62,6 +79,8 @@ a { color: var(--cyan); }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 button, .btn {

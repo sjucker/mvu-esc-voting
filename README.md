@@ -1,6 +1,6 @@
-# ESC-Zugabe-Voting – Musikverein Harmonie Urdorf
+# ESC-Winner-Song-Voting – Musikverein Harmonie Urdorf
 
-Kleine Web-App, mit der das Publikum am Ende des Eurovision-Konzerts den Zugabe-Song wählt.
+Kleine Web-App, mit der das Publikum am Ende des Eurovision-Konzerts den Winner-Song wählt.
 
 | Seite | URL | Für wen |
 |---|---|---|
@@ -45,4 +45,4 @@ Die Smartphones müssen den Server erreichen. Möglichkeiten:
 - **Im Internet** (empfohlen): auf einem beliebigen Node-Hoster (z.B. Render, Fly.io, Railway oder einem eigenen VPS) mit HTTPS. Auf ein persistentes Volume für `DATA_FILE` achten.
 - **Lokal im Saal**: Laptop und Publikum im selben WLAN. `npm start` auf dem Laptop und als öffentliche URL `http://<Laptop-IP>:3000/` eintragen.
 
-Hinweis: «Eine Stimme pro Browser» ist bewusst einfach gehalten. Wer Cookies löscht oder einen zweiten Browser nutzt, kann nochmals abstimmen. Für ein Zugabe-Voting reicht das.
+Hinweis: «Eine Stimme pro Browser» ist bewusst einfach gehalten. Wer Cookies löscht oder einen zweiten Browser nutzt, kann nochmals abstimmen. Für ein Winner-Song-Voting reicht das.

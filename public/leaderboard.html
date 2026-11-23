@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zugabe-Leaderboard</title>
+  <title>Winner-Song-Leaderboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Noto+Color+Emoji&display=swap">
   <link rel="stylesheet" href="/style.css">
@@ -14,8 +14,9 @@
     .screen[hidden] { display: none; }
 
     /* ---------- idle: QR + live counter */
-    #idle { gap: 4vh; padding: 5vh 5vw; text-align: center; }
-    #idle h1 { font-size: clamp(2.5rem, 7vw, 8rem); font-weight: 900; margin: 0; }
+    #idle { gap: 3.5vh; padding: 4vh 5vw; text-align: center; }
+    #idle .logo { width: auto; height: 22vh; margin-bottom: 2vh; }
+    #idle h1 { font-size: clamp(2.2rem, 6vw, 7rem); font-weight: 900; margin: 0; }
     #idle .eyebrow { font-size: clamp(.8rem, 1.4vw, 1.4rem); }
     .idle-row { display: flex; align-items: center; justify-content: center; gap: 6vw; flex-wrap: wrap; }
     .qr { background: #fff; padding: 2vh; border-radius: 3vh; width: min(34vh, 40vw); box-shadow: 0 0 80px rgba(255,46,147,.35); }
@@ -129,8 +130,9 @@
 <body>
   <section class="screen" id="idle">
     <div>
+      <img class="logo" src="/logo.png" alt="Best of Eurovision Song Contest" width="800" height="464">
       <div class="eyebrow">Musikverein Harmonie Urdorf · <span id="event-title"></span></div>
-      <h1 class="grad-text">Welcher Song als Zugabe?</h1>
+      <h1 class="grad-text">Welcher Song wird der Winner-Song?</h1>
     </div>
     <div class="idle-row">
       <div>
@@ -388,7 +390,7 @@
           <div class="winner-title ${tie ? 'small' : ''}">${esc(w.title)}</div>
           <div class="winner-artist">${esc(songLine(w))}</div>`).join('')}
         <div class="winner-votes"><span class="pill revealed">${winners[0].votes} von ${state.totalVotes} Stimmen · ${pct(winners[0].votes)}%</span></div>
-        <div class="zugabe grad-text">ZUGABE!</div>`;
+        <div class="zugabe grad-text">WINNER-SONG!</div>`;
       card.classList.toggle('static', !animate);
       card.hidden = false;
       $('winner-pre').textContent = '';
@@ -432,7 +434,7 @@
           return;
         }
         await intro('Die Stimmen sind ausgezählt…', 3000, token);
-        await intro('Und die Zugabe ist…', 2200, token);
+        await intro('Und der Winner-Song ist…', 2200, token);
 
         const els = buildBoard(rows);
         $('board-caption').innerHTML = '<span class="grad-text">Die Rangliste</span>';
@@ -445,7 +447,7 @@
           const isRunnerUp = i === winners.length;
           if (isRunnerUp) {
             const remaining = els.slice(0, winners.length + 1);
-            $('board-caption').innerHTML = `<span class="grad-text">${remaining.length === 2 ? 'Nur noch zwei Songs im Rennen…' : 'Wer holt sich die Zugabe?'}</span>`;
+            $('board-caption').innerHTML = `<span class="grad-text">${remaining.length === 2 ? 'Nur noch zwei Songs im Rennen…' : 'Wer wird der Winner-Song?'}</span>`;
             remaining.forEach((el) => el.classList.add('suspense'));
             sound.drumroll(3.2);
             await sleep(3300, token);
@@ -462,7 +464,7 @@
         $('winner-card').hidden = true;
         const pre = $('winner-pre');
         pre.className = ''; void pre.offsetWidth;
-        pre.textContent = winners.length > 1 ? 'Wir haben einen Gleichstand…' : 'Der Zugabe-Song ist…';
+        pre.textContent = winners.length > 1 ? 'Wir haben einen Gleichstand…' : 'Der Winner-Song ist…';
         pre.className = 'grad-text fade-in';
         $('spot').classList.add('on');
         sound.drumroll(3.6);

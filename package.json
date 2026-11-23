@@ -1,7 +1,7 @@
 {
   "name": "mvu-esc-voting",
   "version": "1.0.0",
-  "description": "Zugabe-Voting für das Eurovision-Konzert des Musikverein Harmonie Urdorf",
+  "description": "Winner-Song-Voting für das Eurovision-Konzert des Musikverein Harmonie Urdorf",
   "main": "server.js",
   "private": true,
   "scripts": {
