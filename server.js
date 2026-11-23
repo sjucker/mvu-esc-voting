@@ -53,12 +53,25 @@ function flush() {
 }
 
 function save() {
-  if (!saveTimer) saveTimer = setTimeout(flush, 250);
+  if (saveTimer) return;
+  saveTimer = setTimeout(() => {
+    try {
+      flush();
+    } catch (err) {
+      // A failed write must not take the server down mid-show; votes stay in memory, retry.
+      console.error('Konnte Daten nicht speichern:', err.message);
+      save();
+    }
+  }, 250);
 }
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, () => {
-    if (saveTimer) flush();
+    try {
+      if (saveTimer) flush();
+    } catch (err) {
+      console.error('Konnte Daten nicht speichern:', err.message);
+    }
     process.exit(0);
   });
 }
@@ -156,7 +169,13 @@ function parseCookies(req) {
   const out = {};
   for (const part of (req.headers.cookie || '').split(';')) {
     const i = part.indexOf('=');
-    if (i > 0) out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+    if (i <= 0) continue;
+    const value = part.slice(i + 1).trim();
+    try {
+      out[part.slice(0, i).trim()] = decodeURIComponent(value);
+    } catch {
+      out[part.slice(0, i).trim()] = value; // malformed %-escape: keep it raw instead of failing the request
+    }
   }
   return out;
 }
@@ -311,14 +330,22 @@ function serveStatic(req, res, pathname) {
     'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream',
     'Cache-Control': 'no-cache',
   });
-  fs.createReadStream(file).pipe(res);
+  fs.createReadStream(file)
+    .on('error', () => res.destroy()) // an unhandled stream error would crash the process
+    .pipe(res);
 }
 
 // ---------------------------------------------------------------- server
 
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
   try {
+    // Inside the try: `new URL` throws on paths like «//», and an unhandled rejection kills the process.
+    let url;
+    try {
+      url = new URL(req.url, 'http://localhost');
+    } catch {
+      throw new HttpError(400, 'Ungültige Anfrage');
+    }
     if (url.pathname.startsWith('/api/')) await handleApi(req, res, url);
     else if (req.method === 'GET' || req.method === 'HEAD') serveStatic(req, res, url.pathname);
     else throw new HttpError(405, 'Methode nicht erlaubt');
