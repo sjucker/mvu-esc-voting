@@ -17,6 +17,13 @@ primary_region = "fra"
   auto_start_machines = true
   min_machines_running = 1
 
+  # ~500 phones polling every 4 s: count in-flight requests and keep the limits far above
+  # what the hall can produce, so the proxy never queues or rejects voters.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 800
+    hard_limit = 1000
+
 [[vm]]
   size = "shared-cpu-1x"
   memory = "256mb"
