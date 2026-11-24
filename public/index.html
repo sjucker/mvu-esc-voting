@@ -57,7 +57,6 @@
   <main>
     <header>
       <img class="logo" src="/logo.png" alt="Best of Eurovision Song Contest" width="800" height="464">
-      <div class="eyebrow">Musikverein Harmonie Urdorf</div>
       <h1 class="grad-text">Winner-Song-Voting</h1>
       <div class="muted" id="event-title"></div>
     </header>
@@ -94,7 +93,7 @@
     }
 
     function message(icon, title, text, extra = '', after = '') {
-      return `<div class="card message pop"><div class="big">${icon}</div><h2>${title}</h2>${extra}<p class="muted">${text}</p>${after}</div>`;
+      return `<div class="card message pop"><div class="big">${icon}</div><h2>${title}</h2>${extra}${text ? `<p class="muted">${text}</p>` : ''}${after}</div>`;
     }
 
     function votedSong() {
@@ -131,7 +130,7 @@
           'Die Stimmen werden ausgezählt. Die Auflösung gibt’s gleich auf der Leinwand!');
       } else if (mode === 'voted') {
         view.innerHTML = message('🎉', 'Danke für deine Stimme!',
-          'Die Auflösung gibt’s am Ende auf der Leinwand. Viel Spass beim Konzert!',
+          '',
           `<p class="muted" style="margin:14px 0 0">Du hast gestimmt für</p><div class="chosen grad-text">${esc(mine.title)}</div><div class="muted">${esc(songLine(mine))}</div>`,
           canChange ? '<button class="change" id="change">Stimme ändern</button>' : '');
       } else if (mode === 'revealed') {

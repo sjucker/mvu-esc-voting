@@ -1,6 +1,6 @@
-# ESC-Winner-Song-Voting – Musikverein Harmonie Urdorf
+# ESC-Winner-Song-Voting
 
-Kleine Web-App, mit der das Publikum am Ende des Eurovision-Konzerts den Winner-Song wählt.
+Kleine Web-App, mit der das Publikum den Winner-Song wählt.
 
 | Seite | URL | Für wen |
 |---|---|---|

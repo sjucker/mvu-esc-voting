@@ -20,7 +20,7 @@ if (!ADMIN_PASSWORD) {
 
 function defaultState() {
   return {
-    title: 'Eurovision-Konzert',
+    title: '',
     publicUrl: '',
     votingOpen: false,
     revealed: false,
