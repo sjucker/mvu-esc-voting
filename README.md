@@ -30,9 +30,9 @@ Umgebungsvariablen: `PORT` (Standard 3000), `ADMIN_PASSWORD`, `DATA_FILE` (Stand
 ## Ablauf am Konzert
 
 1. **Vorher:** Unter `/admin` die Songs erfassen. Unter *Einstellungen* die öffentliche URL eintragen, damit der QR-Code auf dem Leaderboard stimmt.
-2. **Beamer:** `/leaderboard` öffnen, einmal auf **«Ton aktivieren»** klicken (Browser erlauben Ton erst nach einem Klick), dann **F** für Vollbild.
+2. **Beamer:** `/leaderboard` öffnen, dann **F** (oder Knopf oben rechts) für Vollbild.
 3. **Voting öffnen**: Der Beamer zeigt QR-Code und Live-Zähler der Stimmen (ohne Zwischenstand).
-4. **Voting schliessen**, dann **«Gewinner enthüllen»**. Das Leaderboard startet automatisch die Show: nur die Top 3 werden von hinten aufgedeckt (die übrigen Plätze bleiben auf dem Beamer geheim und sind nur im Admin sichtbar), Trommelwirbel, Gewinner mit Konfetti. Bei Gleichstand werden alle Erstplatzierten gezeigt.
+4. **Voting schliessen**, dann **«Gewinner enthüllen»**. Das Leaderboard startet automatisch die Show: nur die Top 3 werden von hinten aufgedeckt (die übrigen Plätze bleiben auf dem Beamer geheim und sind nur im Admin sichtbar), Spannungsmoment, Gewinner mit Konfetti. Bei Gleichstand werden alle Erstplatzierten gezeigt.
 
 Tasten auf dem Leaderboard: **F** Vollbild · **R** Enthüllung wiederholen · **B** zwischen Top 3 und Gewinner wechseln.
 

@@ -123,8 +123,6 @@
     .controls { position: fixed; top: 14px; right: 14px; display: flex; gap: 8px; z-index: 30; opacity: .25; transition: opacity .3s; }
     .controls:hover, .controls:focus-within { opacity: 1; }
     body.playing .controls { opacity: 0; pointer-events: none; }
-    .hint { position: fixed; bottom: 12px; left: 16px; font-size: .75rem; color: rgba(255,255,255,.3); z-index: 30; }
-    body.playing .hint { display: none; }
   </style>
 </head>
 <body>
@@ -166,10 +164,8 @@
   <canvas id="confetti"></canvas>
 
   <div class="controls">
-    <button class="btn-small" id="sound-btn">🔇 Ton aktivieren</button>
     <button class="btn-small" id="fs-btn">⛶ Vollbild</button>
   </div>
-  <div class="hint">F = Vollbild · R = Enthüllung wiederholen · B = Top 3/Gewinner umschalten</div>
 
   <script src="/vendor/qrcode.js"></script>
   <script src="/common.js"></script>
@@ -189,67 +185,6 @@
       for (const s of ['idle', 'board', 'intro', 'winner']) $(s).hidden = s !== id;
     }
 
-    // ------------------------------------------------------------ sound (Web Audio, no files)
-    const sound = {
-      ctx: null,
-      enable() {
-        this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)();
-        this.ctx.resume();
-        const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-        this.noise = buf;
-      },
-      noiseHit(t, dur, gain, type, freq) {
-        const c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-        src.buffer = this.noise; f.type = type; f.frequency.value = freq;
-        g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-        src.connect(f).connect(g).connect(c.destination);
-        src.start(t, Math.random()); src.stop(t + dur + .05);
-      },
-      tone(t, freq, dur, gain, type = 'sine', endFreq) {
-        const c = this.ctx, o = c.createOscillator(), g = c.createGain();
-        o.type = type; o.frequency.setValueAtTime(freq, t);
-        if (endFreq) o.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
-        g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-        o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + .05);
-      },
-      ding() {
-        if (!this.ctx) return;
-        const t = this.ctx.currentTime;
-        this.tone(t, 1318, .5, .18); this.tone(t + .07, 1760, .6, .12);
-      },
-      whoosh() {
-        if (!this.ctx) return;
-        this.noiseHit(this.ctx.currentTime, .6, .25, 'bandpass', 900);
-      },
-      drumroll(seconds) {
-        if (!this.ctx) return;
-        const t0 = this.ctx.currentTime;
-        for (let t = 0; t < seconds; t += 0.045) {
-          const k = t / seconds;
-          this.noiseHit(t0 + t, .08, .05 + k * k * .35, 'bandpass', 1800 + (Math.random() * 400));
-        }
-      },
-      crash() {
-        if (!this.ctx) return;
-        const t = this.ctx.currentTime;
-        this.noiseHit(t, 3, .6, 'highpass', 5000);
-        this.noiseHit(t, .4, .7, 'lowpass', 300);
-        this.tone(t, 90, 1.2, .7, 'sine', 40);
-        // little brass-ish fanfare
-        [[523, 0], [659, .12], [784, .24], [1046, .4]].forEach(([f, d]) => {
-          this.tone(t + .5 + d, f, d === .4 ? 1.6 : .3, .12, 'sawtooth');
-          this.tone(t + .5 + d, f * 2, d === .4 ? 1.6 : .3, .04, 'square');
-        });
-      },
-    };
-
-    $('sound-btn').addEventListener('click', () => {
-      sound.enable();
-      $('sound-btn').textContent = '🔊 Ton aktiv';
-      sound.ding();
-    });
     $('fs-btn').addEventListener('click', toggleFullscreen);
     function toggleFullscreen() {
       if (document.fullscreenElement) document.exitFullscreen();
@@ -373,8 +308,6 @@
         countUp(score, r.votes, 1000);
         el.querySelector('.fill').style.width = (max ? (r.votes / max) * 100 : 0) + '%';
       }, 360);
-      sound.whoosh();
-      setTimeout(() => sound.ding(), 380);
     }
 
     async function intro(text, ms, token) {
@@ -454,7 +387,6 @@
             const remaining = els.slice(0, winners.length + 1);
             $('board-caption').innerHTML = `<span class="grad-text">${remaining.length === 2 ? 'Nur noch zwei Songs im Rennen…' : 'Wer wird der Winner-Song?'}</span>`;
             remaining.forEach((el) => el.classList.add('suspense'));
-            sound.drumroll(3.2);
             await sleep(3300, token);
             remaining.forEach((el) => el.classList.remove('suspense'));
           } else {
@@ -472,12 +404,10 @@
         pre.textContent = winners.length > 1 ? 'Wir haben einen Gleichstand…' : 'Der Winner-Song ist…';
         pre.className = 'grad-text fade-in';
         $('spot').classList.add('on');
-        sound.drumroll(3.6);
         await sleep(3700, token);
 
         document.body.insertAdjacentHTML('beforeend', '<div class="flash"></div>');
         setTimeout(() => document.querySelector('.flash')?.remove(), 900);
-        sound.crash();
         renderWinnerCard(rows, winners, true);
         const content = document.querySelector('.winner-content');
         content.classList.remove('shake'); void content.offsetWidth; content.classList.add('shake');
