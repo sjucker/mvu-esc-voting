@@ -169,7 +169,7 @@
     <button class="btn-small" id="sound-btn">🔇 Ton aktivieren</button>
     <button class="btn-small" id="fs-btn">⛶ Vollbild</button>
   </div>
-  <div class="hint">F = Vollbild · R = Enthüllung wiederholen · B = Rangliste/Gewinner umschalten</div>
+  <div class="hint">F = Vollbild · R = Enthüllung wiederholen · B = Top 3/Gewinner umschalten</div>
 
   <script src="/vendor/qrcode.js"></script>
   <script src="/common.js"></script>
@@ -330,6 +330,11 @@
       return rows;
     }
 
+    // Only the podium is shown on the projector (more suspense, no public last place).
+    // Ties can put more than three songs on it.
+    const PODIUM = 3;
+    function podium() { return ranked().filter((r) => r.rank <= PODIUM); }
+
     function pct(v) { return state.totalVotes ? Math.round((v / state.totalVotes) * 100) : 0; }
 
     function buildBoard(rows) {
@@ -411,7 +416,7 @@
         el.querySelector('.fill').style.transition = 'none';
         el.querySelector('.fill').style.width = (max ? (r.votes / max) * 100 : 0) + '%';
       });
-      $('board-caption').innerHTML = '<span class="grad-text">Die Rangliste</span>';
+      $('board-caption').innerHTML = '<span class="grad-text">Die Top 3</span>';
       if (winners.length) renderWinnerCard(rows, winners, false);
       show(winners.length ? 'winner' : 'board');
     }
@@ -421,7 +426,7 @@
       revealShown = true;
       confetti.stop();
       document.body.classList.add('playing');
-      const rows = ranked();
+      const rows = podium();
       const max = rows[0]?.votes || 0;
       const winners = max > 0 ? rows.filter((r) => r.votes === max) : [];
       $('winner-card').hidden = true;
@@ -434,10 +439,10 @@
           return;
         }
         await intro('Die Stimmen sind ausgezählt…', 3000, token);
-        await intro('Und der Winner-Song ist…', 2200, token);
+        await intro('Hier sind die Top 3…', 2200, token);
 
         const els = buildBoard(rows);
-        $('board-caption').innerHTML = '<span class="grad-text">Die Rangliste</span>';
+        $('board-caption').innerHTML = '<span class="grad-text">Die Top 3</span>';
         show('board');
         await sleep(1400, token);
 
@@ -499,7 +504,7 @@
       if (revealShown) return;
       if (played() === String(state.revealId)) {
         revealShown = true;
-        const rows = ranked();
+        const rows = podium();
         const max = rows[0]?.votes || 0;
         showFinal(rows, max > 0 ? rows.filter((r) => r.votes === max) : []);
       } else {
@@ -514,7 +519,7 @@
       if (k === 'r' && state?.revealed) playReveal();
       if (k === 'b' && state?.revealed && !document.body.classList.contains('playing')) {
         if (!$('winner').hidden) {
-          const rows = ranked();
+          const rows = podium();
           const max = rows[0]?.votes || 0;
           showFinal(rows, max > 0 ? rows.filter((r) => r.votes === max) : []);
           show('board');
